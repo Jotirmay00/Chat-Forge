@@ -32,7 +32,7 @@ const iconMap = {
   
 
 
-const ServerSidebar = async ({
+ export const ServerSidebar = async ({
 serverId
 } : ServerSideBarProps) => {
 
