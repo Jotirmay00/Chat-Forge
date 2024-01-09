@@ -12,6 +12,7 @@ import { Delete, Edit, FileIcon, ShieldAlert, ShieldCheck, Trash } from "lucide-
 import Image from "next/image";
 import { use, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useRouter,useParams } from "next/navigation";
 
 import {
     Form,
@@ -61,8 +62,16 @@ export const ChatItem = ({
   socketQuery,
 }: ChatItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const {onOpen} = useModal()
+  const params = useParams()
+  const router = useRouter()
 
+  const onMemberClick = ()=>{
+    if(member.id === currentMember.id){
+        return
+    }
+    router.push(`/servers/${params?.serverId}/conversations/${member.id}`)
+  }
 
   useEffect(() => {
     const handleKeyDown = (event: any) => {
@@ -86,8 +95,20 @@ export const ChatItem = ({
   const isLoading = form.formState.isSubmitting;
 
 
-  const onSubmit = (values)=>{
-    console.log(values)
+  const onSubmit = async (values : z.infer<typeof formSchema>)=>{
+   try {
+    
+    const url = qs.stringifyUrl({
+        url : `${socketUrl}/${id}`,
+        query : socketQuery,
+    })
+
+    await axios.patch(url,values)
+    form.reset()
+    setIsEditing(false)
+   } catch (error) {
+    console.log(error)
+   }
   }
 
   useEffect(()=>{
@@ -109,13 +130,13 @@ export const ChatItem = ({
   return (
     <div className="relative group flex items-center hover:bg-black/5 p-4 transition w-full">
       <div className="group flex gap-x-2 items-start w-full">
-        <div className="cursor-pointer hover:drop-shadow-md transition">
+        <div  onClick={onMemberClick} className="cursor-pointer hover:drop-shadow-md transition">
           <UserAvatar src={member.profile.imageUrl} />
         </div>
         <div className="flex flex-col w-full">
           <div className="flex items-center gap-x-2">
             <div className="flex items-center">
-              <p className="font-semibold text-sm hover:underline cursor-pointer">
+              <p onClick={onMemberClick} className="font-semibold text-sm hover:underline cursor-pointer">
                 {member.profile.name}
               </p>
               <ActionTooltip label={member.role}>
@@ -221,6 +242,10 @@ export const ChatItem = ({
 
           <ActionTooltip label="Delete">
             <Trash
+            onClick={()=> onOpen("deleteMessage",{
+                apiUrl :`${socketUrl}/${id}`,
+                query : socketQuery,
+            })}
             className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
           </ActionTooltip>
         </div>
